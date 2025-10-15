@@ -1,0 +1,7 @@
+[project]
+name = "deep-learning-with-pytorch"
+version = "0.1.0"
+description = "DataCamp Learning Track: Deep Learning with PyTorch"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
