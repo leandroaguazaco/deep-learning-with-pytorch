@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, TensorDataset, DataLoader
 import torch.nn.functional as F
+import torch.nn.init as init
 import torch.optim as optim
 from torch.nn import MSELoss, CrossEntropyLoss
 import polars as pl
@@ -29,11 +30,17 @@ class Net(nn.Module):
     def __init__(self):
         super().__init__()
         self.layer1 = nn.Linear(9, 16) # (9 + 1) * 16 = 160
+        init.kaiming_uniform_(self.layer1.weight) # Weight initialization
         self.layer2 = nn.Linear(16, 8) # (16 + 1) * 8 = 136
+        init.kaiming_uniform_(self.layer2.weight)
         self.layer3 = nn.Linear(8, 1) # (8 + 1) * 1 = 9
+        init.kaiming_uniform_(
+            self.layer3.weight,
+            nonlinearity='sigmoid'
+        )
     
     def forward(self, x):
-        x = F.relu(self.layer1(x))
-        x = F.relu(self.layer2(x))
+        x = F.elu(self.layer1(x))
+        x = F.elu(self.layer2(x))
         x = F.sigmoid(self.layer3(x))
         return x
