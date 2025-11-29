@@ -55,13 +55,13 @@ class Net(nn.Module):
         return x
 
 class MyCNN(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes=7):
         super().__init__()
         self.features_extractor = nn.Sequential(
             nn.Conv2d(
                 in_channels=3, # Three channels: RGB 
-                out_channels=32, # Number of filters
-                kernel_size=3, # 3 x 3 filter matrix
+                out_channels=32, # Number of filters, 32 filters
+                kernel_size=3, # 3 x 3 filter size
                 stride=1, # Shift 1 by 1
                 padding=1 # Adds one layer of zeros around the border
             ), # Out: 32 x 128 x 128
@@ -74,10 +74,10 @@ class MyCNN(nn.Module):
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(in_features=64*32*32, out_features=1024),
+            nn.Linear(in_features=64*32*32, out_features=1_024),
             nn.ELU(),
             nn.Dropout(p=0.5), # Regularization
-            nn.Linear(1024, 7)
+            nn.Linear(1024, num_classes)
         )
 
     def forward(self, x):
