@@ -65,19 +65,21 @@ class MyCNN(nn.Module):
                 stride=1, # Shift 1 by 1
                 padding=1 # Adds one layer of zeros around the border
             ), # Out: 32 x 128 x 128
-            nn.ELU(),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=2), # Out: 32 x 64 x 64
+
             nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1), # Out: 64 x 64 x 64
-            nn.ELU(),
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=2), # 64 x 32 x 32
+
             nn.Flatten() 
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(in_features=64*32*32, out_features=1_024),
-            nn.ELU(),
+            nn.Linear(in_features=64*32*32, out_features=512),
+            nn.ReLU(),
             nn.Dropout(p=0.5), # Regularization
-            nn.Linear(1024, num_classes)
+            nn.Linear(512, num_classes)
         )
 
     def forward(self, x):
