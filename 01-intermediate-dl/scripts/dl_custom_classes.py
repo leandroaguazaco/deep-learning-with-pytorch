@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import torch.nn.init as init
 import torch.optim as optim
 from torch.nn import MSELoss, CrossEntropyLoss, BCEWithLogitsLoss
+from torchvision import models
 import polars as pl
 
 class WaterDataset (Dataset):
@@ -86,3 +87,47 @@ class MyCNN(nn.Module):
         x = self.features_extractor(x)
         x = self.classifier(x)
         return x
+
+class TransferResNet18(nn.Module):
+    def __init__(self, num_classes=10, pretrained=True):
+        super().__init__()
+
+        # Loads ResNet-18 and use weights trained on ImageNet (1K classes)
+        self.net = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1 if pretrained else None)
+        
+        # Replace the final classification layer
+        in_feats = self.net.fc.in_features
+        self.net.fc = nn.Linear(in_feats, num_classes)
+        
+        # Freeze all layers except the classifier
+        for name, p in self.net.named_parameters():
+            p.requires_grad = name.startswith("fc")
+
+    def forward(self, x):
+        return self.net(x)
+
+class FineTuneResNet18(nn.Module):
+    def __init__(self, num_classes=10, pretrained=True, pct_unfreeze=0.25):
+        super().__init__()
+        pct_unfreeze = float(max(0.0, min(1.0, pct_unfreeze)))
+        self.net = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1 if pretrained else None)
+        in_feats = self.net.fc.in_features
+        self.net.fc = nn.Linear(in_feats, num_classes)
+
+        for p in self.net.parameters():
+            p.requires_grad = False
+        for p in self.net.fc.parameters():
+            p.requires_grad = True
+
+        group_names = ["layer4", "layer3", "layer2", "layer1", "bn1", "conv1"]
+        total_groups = len(group_names)
+        k = int(round(pct_unfreeze * total_groups))
+        to_unfreeze = group_names[ :k]
+
+        for name, module in self.net.named_modules():
+            if any(name == g or name.startswith(g + ".") for g in to_unfreeze):
+                for p in module.parameters(recurse=True):
+                    p.requires_grad = True
+
+    def forward(self, x):
+        return self.net(x)
